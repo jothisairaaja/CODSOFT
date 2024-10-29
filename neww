@@ -1,0 +1,89 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.preprocessing import LabelEncoder
+from sklearn.impute import SimpleImputer
+
+# Load the dataset
+df = pd.read_csv(r'C:\Users\Jothi Sai Raaja\Downloads\Titanic-Dataset.csv')  
+
+# Basic data overview
+print("First 5 rows of the dataset:")
+print(df.head())
+print("\nDataset info:")
+print(df.info())
+
+# Data Preprocessing
+# Dropping irrelevant columns (Ticket, Cabin, Name)
+df = df.drop(columns=['PassengerId', 'Ticket', 'Cabin', 'Name'])
+
+# Handling missing values
+imputer = SimpleImputer(strategy='median')
+df['Age'] = imputer.fit_transform(df[['Age']])  # Fill missing ages with median
+df['Fare'] = imputer.fit_transform(df[['Fare']])  # Just in case there's a missing Fare
+df = df.dropna(subset=['Embarked'])  # Drop rows where 'Embarked' is missing
+
+# Encoding categorical variables
+label_encoder = LabelEncoder()
+df['Sex'] = label_encoder.fit_transform(df['Sex'])  # Convert 'Sex' to numerical (0 for female, 1 for male)
+df['Embarked'] = label_encoder.fit_transform(df['Embarked'])  # Encode 'Embarked' (ports of embarkation)
+
+# Splitting dataset into features (X) and target (y)
+X = df.drop('Survived', axis=1)  # Features (excluding the 'Survived' column)
+y = df['Survived']  # Target variable
+
+# Splitting the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=157, random_state=42)
+
+# Build a Random Forest Classifier model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Model evaluation
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Model Accuracy: {accuracy * 100:.2f}%")
+
+# Confusion matrix and classification report
+conf_matrix = confusion_matrix(y_test, y_pred)
+class_report = classification_report(y_test, y_pred)
+
+print("\nConfusion Matrix:")
+print(conf_matrix)
+print("\nClassification Report:")
+print(class_report)
+
+# Feature importance plot
+feature_importances = model.feature_importances_
+indices = np.argsort(feature_importances)[::-1]
+
+plt.figure(figsize=(10, 6))
+plt.title("Feature Importance")
+plt.bar(range(X.shape[1]), feature_importances[indices], align="center")
+plt.xticks(range(X.shape[1]), X.columns[indices], rotation=90)
+plt.tight_layout()
+plt.show()
+
+# Predict survival for a new passenger (example)
+# Replace the values with actual data you want to test (Pclass, Sex, Age, SibSp, Parch, Fare, Embarked)
+new_passenger = pd.DataFrame({
+    'Pclass': [1],  # 1st, 2nd, or 3rd class
+    'Sex': [0],  # 0 = female, 1 = male
+    'Age': [38],  # Age of the passenger
+    'SibSp': [1],  # Number of siblings/spouses aboard
+    'Parch': [0],  # Number of parents/children aboard
+    'Fare': [71.2833],  # Passenger fare
+    'Embarked': [1]  # 0 = C (Cherbourg), 1 = Q (Queenstown), 2 = S (Southampton)
+})
+
+# Make prediction for the new passenger
+new_prediction = model.predict(new_passenger)
+print("\nPrediction for new passenger:")
+print("Survived" if new_prediction[0] == 1 else "Did not survive")

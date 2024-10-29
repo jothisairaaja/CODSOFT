@@ -1,0 +1,81 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from zipfile import ZipFile
+
+
+
+# Load the Iris dataset (update the file path if necessary)
+df = pd.read_csv(r'C:\Users\Jothi Sai Raaja\Downloads\IRIS.csv')  # Update to actual extracted file path
+
+# Display basic info and first few rows
+print("First 5 rows of the dataset:")
+print(df.head())
+print("\nDataset info:")
+print(df.info())
+
+# Visualize the data with pairplots
+sns.pairplot(df, hue="species")
+plt.show()
+
+# Data Preprocessing
+# Encoding the target variable (species)
+df['species'] = df['species'].astype('category').cat.codes
+
+# Splitting dataset into features (X) and target (y)
+X = df.drop('species', axis=1)  # Features (sepal and petal measurements)
+y = df['species']  # Target (species)
+
+# Splitting the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Build a Random Forest Classifier model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+conf_matrix = confusion_matrix(y_test, y_pred)
+class_report = classification_report(y_test, y_pred)
+
+print(f"Model Accuracy: {accuracy * 100:.2f}%")
+print("\nConfusion Matrix:")
+print(conf_matrix)
+print("\nClassification Report:")
+print(class_report)
+
+# Feature importance plot
+feature_importances = model.feature_importances_
+indices = np.argsort(feature_importances)[::-1]
+
+plt.figure(figsize=(10, 6))
+plt.title("Feature Importance")
+plt.bar(range(X.shape[1]), feature_importances[indices], align="center")
+plt.xticks(range(X.shape[1]), X.columns[indices], rotation=90)
+plt.tight_layout()
+plt.show()
+
+
+# Predict the species for a new flower (example)
+# Replace the values with actual measurements (sepal_length, sepal_width, petal_length, petal_width)
+new_flower = pd.DataFrame({
+    'sepal_length': [5.1],  # Example sepal length
+    'sepal_width': [3.5],   # Example sepal width
+    'petal_length': [1.4],  # Example petal length
+    'petal_width': [0.2]    # Example petal width
+})
+
+# Make prediction for the new flower
+new_prediction = model.predict(new_flower)
+species_dict = {0: 'setosa', 1: 'versicolor', 2: 'virginica'}
+print("\nPrediction for new flower:")
+print(f"The predicted species is: {species_dict[new_prediction[0]]}")
+
